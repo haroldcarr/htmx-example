@@ -1,0 +1,10 @@
+cradle:
+  cabal:
+    - path: "src"
+      component: "lib:htmx-example"
+
+    - path: "app/Main.hs"
+      component: "htmx-example:exe:main"
+
+    - path: "app/Paths_htmx_example.hs"
+      component: "htmx-example:exe:main"
