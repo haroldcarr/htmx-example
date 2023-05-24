@@ -16,11 +16,14 @@ dependencies:
 - base >=4.11 && < 5
 - blaze-html
 - blaze-markup
+- bytestring
 - containers
 - protolude
+- safe-exceptions
 - scotty
 - stm
 - text
+- wai
 - wai-cors
 - wai-extra
 
