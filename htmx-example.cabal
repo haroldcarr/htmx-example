@@ -7,6 +7,8 @@ cabal-version: 1.12
 name:           htmx-example
 version:        0.0.1.0
 synopsis:       htmx-example
+license:        Apache-2.0
+license-file:   LICENSE
 build-type:     Simple
 
 library

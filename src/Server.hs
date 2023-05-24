@@ -51,55 +51,55 @@ scott db = scotty 3002 $ do
     liftIO (TLIO.readFile (baseDir <> "/htmx.min.js")) >>= html
 
   get "/required/:id" $ do
-    id <- param "id" `rescue` (\_ -> pure 1) -- TODO
+    id <- param "id"
     toHtml (Html.requiredInfoInitial id)
 
   get "/required/:id/edit" $ do
-    id <- param "id" `rescue` (\_ -> pure 1) -- TODO
+    id <- param "id"
     toHtml (Html.requiredInfoEdit id)
 
   put "/required/:id" $ do
-    id  <- param "id" `rescue` (\_ -> pure 1) -- TODO
+    id  <- param "id"
     ps  <- params
     ats <- liftIO (updateDB db id ps)
     toHtml (Html.optionalInfo id ats)
 
   post "/new-attribute/:id:name:value" $ do
-    id    <- param "id"    `rescue` (\_ -> pure 1) -- TODO
-    name  <- param "name"  `rescue` (\_ -> pure "Xname") -- TODO
-    value <- param "value" `rescue` (\_ -> pure "Xvalue") -- TODO
+    id    <- param "id"
+    name  <- param "name"
+    value <- param "value"
     ats   <- liftIO (updateDB db id [(name, value)])
     toHtml (Html.optionalInfo id ats)
 
   get "/done/:id" $ do
-    id  <- param "id"    `rescue` (\_ -> pure 1) -- TODO
+    id  <- param "id"
     db' <- liftIO (atomically (readTVar db))
-    case M.lookup id db' of
-      Nothing  -> panic "impossible"
-      Just ats -> do
-        let all' = map (\(k,v) -> k<>v) (M.toList ats)
-        html ("signature on " <> TL.concat (map TL.fromStrict all'))
+    let all' = map (\(k, v) -> k <> v) (M.toList (lookupPanic id db'))
+    html ("signature on " <> TL.concat (map TL.fromStrict all'))
 
 toHtml :: BFS.Html -> ActionM ()
 toHtml  = Scty.html . BT.renderHtml
 
 getNextId :: DB -> IO Int
 getNextId db = atomically $ do
-  v <- readTVar db
+  v     <- readTVar db
   let id = case M.keys v of [] -> 1; ks -> maximum ks + 1
   writeTVar db (M.insert id M.empty v)
   pure id
 
 updateDB :: DB -> Int -> [Param] -> IO [(Text,Text)]
 updateDB db id ps = atomically $ do
-  let st = toSt ps
-  v <- readTVar db
-  let v' = case M.lookup id v of
-             Nothing -> panic "impossible"
-             Just m  -> M.union m (M.fromList st)
+  v     <- readTVar db
+  let v' = M.union (lookupPanic id v) (M.fromList (toSt ps))
   writeTVar db (M.insert id v' v)
   pure (M.toList v')
-
-toSt :: [Param] -> [(Text, Text)]
-toSt  = map (\(l,r) -> (TL.toStrict l, TL.toStrict r))
+ where
+  toSt :: [Param] -> [(Text, Text)]
+  toSt  = map (\(l,r) -> (TL.toStrict l, TL.toStrict r))
 {-# HLINT toSt ignore "Use bimap" #-}
+
+lookupPanic :: Ord k => k -> Map k a -> a
+lookupPanic k m = case M.lookup k m of
+  Nothing -> panic "impossible"
+  Just a  -> a
+
